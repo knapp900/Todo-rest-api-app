@@ -1,4 +1,4 @@
-package by.ak.todo_restapi_app.exceptions;
+package by.ak.todo_restapi_app.exceptions.customException;
 
 public class TasksListServiceException extends RuntimeException {
 

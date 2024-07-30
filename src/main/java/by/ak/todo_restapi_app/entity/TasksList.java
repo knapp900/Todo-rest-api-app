@@ -22,7 +22,7 @@ public class TasksList {
     @Column(name = "description")
     private String description;
 
-    @OneToMany(mappedBy = "tasksLists",cascade = CascadeType.ALL,fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "tasksList",cascade = CascadeType.ALL,fetch = FetchType.EAGER)
     private List<Task> tasks;
 
     @Column(name = "dateTimeOfCreation")
@@ -31,7 +31,6 @@ public class TasksList {
     @Column(name = "isCompleted")
     private boolean isComplete;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User user;
+    @Column(name = "username")
+    private String username;
 }

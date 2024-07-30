@@ -11,9 +11,9 @@ import java.util.Optional;
 @Repository
 public interface TasksListRepository extends JpaRepository<TasksList,Long> {
 
-    Optional<TasksList> findAllByUser_UsernameAndId(String username, Long id);
-    Page<TasksList> findAllByUser_Username(String username, Pageable pageable);
-    Page<TasksList> findAllByUser_UsernameAndIsCompleteFalse(String username, Pageable pageable);
+    Optional<TasksList> findAllByUsernameAndId(String username,Long id);
+    Page<TasksList> findAllByUsername(String username, Pageable pageable);
+    Page<TasksList> findAllByUsernameAndIsCompleteFalse(String username, Pageable pageable);
 
-    Page<TasksList> findAllByUser_UsernameAndIsCompleteTrue(String username, Pageable pageable);
+    Page<TasksList> findAllByUsernameAndIsCompleteTrue(String username, Pageable pageable);
 }

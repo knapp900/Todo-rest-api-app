@@ -1,11 +1,10 @@
 package by.ak.todo_restapi_app.service.impl;
 
-import by.ak.todo_restapi_app.entity.Importance;
 import by.ak.todo_restapi_app.entity.Status;
 import by.ak.todo_restapi_app.entity.Task;
 import by.ak.todo_restapi_app.entity.TasksList;
-import by.ak.todo_restapi_app.exceptions.TaskNotFoundException;
-import by.ak.todo_restapi_app.exceptions.TaskServiceException;
+import by.ak.todo_restapi_app.exceptions.customException.TaskNotFoundException;
+import by.ak.todo_restapi_app.exceptions.customException.TaskServiceException;
 import by.ak.todo_restapi_app.repository.TaskRepository;
 import by.ak.todo_restapi_app.service.TaskService;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +14,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.lang.runtime.ObjectMethods;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
@@ -23,23 +21,22 @@ import java.util.Objects;
 @Slf4j
 @Service
 public class TaskServiceImpl implements TaskService {
-
     private final TaskRepository taskRepository;
     private final TasksListServiceImpl tasksListService;
 
     @Override
-    public void deleteTask(Long tasksListId, Long id) {
+    public void deleteTask(Long tasksListId, Long taskId) {
         try {
-            this.taskRepository.findById(id).orElseThrow(() -> {
-                log.error("Error task not found with id: {}", id);
-                return new TaskNotFoundException(String.format("Task with id: %d not found.", id));
+            this.taskRepository.findTaskByTasksListIdAndId(tasksListId,taskId).orElseThrow(() -> {
+                log.error("Error task not found with id: {}", taskId);
+                return new TaskNotFoundException(String.format("Task with id: %d not found.", taskId));
             });
 
-            this.taskRepository.deleteById(id);
+            this.taskRepository.deleteById(taskId);
 
         } catch (Exception e) {
-            log.error("Deleting task with id: {} failed ", id, e);
-            throw new TaskServiceException(String.format("Deleting task with id: %d failed. ", id), e);
+            log.error("Deleting task with id: {} failed ", taskId, e);
+            throw new TaskServiceException(String.format("Deleting task with id: %d failed. ", taskId), e);
         }
     }
 
@@ -58,11 +55,13 @@ public class TaskServiceImpl implements TaskService {
             TasksList destTasksList = this.tasksListService.getTasksListByUsernameAndId(destTasksListId, username);
             TasksList sourceTaskList = this.tasksListService.getTasksListByUsernameAndId(sourceTasksListId, username);
 
-            destTasksList.getTasks().add(taskForMoving);
-            sourceTaskList.getTasks().remove(taskForMoving);
+            if (Objects.equals(taskForMoving.getTasksList(),sourceTaskList)){
 
-            this.tasksListService.save(destTasksList);
-            this.tasksListService.save(sourceTaskList);
+                taskForMoving.setTasksList(destTasksList);
+            } else {
+                throw new TaskServiceException(String.format(
+                        "Moving task with id: %d to list with id: %d failed.", sourceTaskId, destTasksListId));
+            }
 
         } catch (Exception e) {
             log.error("Error from moving task with id:{} to another list with id: {}.", sourceTaskId, destTasksListId);
@@ -73,9 +72,9 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public Task createTask(Long tasksListId, Task task) {
+    public Task createTask(Long tasksListId, Task task,String username) {
         try {
-            task.setTasksListId(this.tasksListService.getById(tasksListId));
+            task.setTasksList(this.tasksListService.getTasksListByUsernameAndId(tasksListId, username));
             return this.taskRepository.save(task);
         } catch (Exception e) {
             log.error("Error creating task: {}.", task, e);
@@ -129,14 +128,16 @@ public class TaskServiceImpl implements TaskService {
         }
     }
 
-    @Override
-    public Page<Task> getAllCompletedTasks(Long tasksListId, Pageable pageable) {
-        return null;
-    }
 
     @Override
-    public Page<Task> getAllUncompletedTasks(Long tasksListId, Pageable pageable) {
-        return null;
+    public Page<Task> getAllByStatus(Status status, Long tasksListId, Pageable pageable) {
+
+        try {
+            return this.taskRepository.findByStatus(status,tasksListId,pageable);
+        } catch (Exception e){
+            log.error("Error fetching all tasks with status: {}.",status, e);
+            throw new TaskServiceException(String.format("Fetching all tasks with status: %s failed.",status));
+        }
     }
 
 

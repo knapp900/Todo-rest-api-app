@@ -19,6 +19,7 @@ public class User {
     private Long id;
     @Column(name = "usrname",unique = true)
     private String username;
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<TasksList> tasksLists;
+    @Column(name = "password")
+    private String password;
+
 }

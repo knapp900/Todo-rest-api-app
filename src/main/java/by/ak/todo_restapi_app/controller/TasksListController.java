@@ -1,7 +1,6 @@
 package by.ak.todo_restapi_app.controller;
 
 import by.ak.todo_restapi_app.entity.TasksList;
-import by.ak.todo_restapi_app.service.JwtService;
 import by.ak.todo_restapi_app.service.TasksListService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,22 +9,23 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
+
 @Slf4j
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/api/v1/lists")
+@RequestMapping("/api/v1/auth/lists")
 public class TasksListController {
 
     private final TasksListService tasksListService;
-    private final JwtService jwtService;
 
     @DeleteMapping("/{id}")
     ResponseEntity<Void> deleteTasksList(
-            @RequestHeader("Authorization") String token,
+            Principal principal,
             @PathVariable Long id) {
-        String username = this.jwtService.extractUsername(token);
+
         log.info("Deleting task list with id: {}.", id);
-        this.tasksListService.deleteTasksList(id,username);
+        this.tasksListService.deleteTasksList(id, principal.getName());
         log.info("Task list with id: {} deleted.", id);
         return ResponseEntity.noContent().build();
     }
@@ -33,9 +33,9 @@ public class TasksListController {
 
     @PostMapping
     public ResponseEntity<TasksList> createTasksList(
-            @RequestHeader("Authorization") String token,
+            Principal principal,
             @RequestBody String description) {
-        String username = this.jwtService.extractUsername(token);
+        String username = principal.getName();
         log.info("Creating task list with user: {}.", username);
         TasksList tasksList = tasksListService.createTasksList(description,username);
         log.info("Created task list with user: {}.", username);
@@ -44,23 +44,23 @@ public class TasksListController {
 
     @PutMapping("/{id}")
     public ResponseEntity<TasksList> updateTasksList(
-            @RequestHeader("Authorization") String token,
+            Principal principal,
             @PathVariable Long id,
             @RequestBody String description) {
-        String username = this.jwtService.extractUsername(token);
+
         log.info("Updating task list with id: {}.", id);
-        this.tasksListService.updateTasksList(id, description,username);
+        this.tasksListService.updateTasksList(id, description,principal.getName());
         log.info("Task list with id: {} updated.", id);
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<TasksList> getTaskListById(
-            @RequestHeader("Authorization") String token,
+            Principal principal,
             @PathVariable Long id){
-        String username = this.jwtService.extractUsername(token);
+
         log.info("Fetching task list by id: {}.",id);
-        TasksList tasksLists = tasksListService.getTasksListByUsernameAndId(id,username);
+        TasksList tasksLists = tasksListService.getTasksListByUsernameAndId(id,principal.getName());
         log.info("Task list fetched by id: {}",id);
 
         return ResponseEntity.ok(tasksLists);
@@ -68,22 +68,22 @@ public class TasksListController {
 
     @GetMapping
     public ResponseEntity<Page<TasksList>> getAllTasksLists(
-            @RequestHeader("Authorization") String token,
+            Principal principal,
             Pageable pageable) {
-        String username = this.jwtService.extractUsername(token);
+
         log.info("Fetching all tasks lists.");
-        Page<TasksList> tasksLists = tasksListService.getAllTasksLists(pageable,username);
+        Page<TasksList> tasksLists = tasksListService.getAllTasksLists(pageable, principal.getName());
         log.info("All tasks lists fetched");
         return ResponseEntity.ok(tasksLists);
     }
 
     @GetMapping("/uncompleted")
     public ResponseEntity<Page<TasksList>> getAllUncompletedTasksLists(
-            @RequestHeader("Authorization") String token,
+            Principal principal,
             Pageable pageable) {
-        String username = this.jwtService.extractUsername(token);
+
         log.info("Fetching all uncompleted tasks lists.");
-        Page<TasksList> tasksLists = tasksListService.getAllUncompletedTasksLists(pageable,username);
+        Page<TasksList> tasksLists = tasksListService.getAllUncompletedTasksLists(pageable, principal.getName());
         log.info("All uncompleted tasks lists fetched");
         return ResponseEntity.ok(tasksLists);
 
@@ -91,11 +91,11 @@ public class TasksListController {
 
     @GetMapping("/completed")
     public ResponseEntity<Page<TasksList>> getAllCompletedTasksLists(
-            @RequestHeader("Authorization") String token,
+            Principal principal,
             Pageable pageable) {
-        String username = this.jwtService.extractUsername(token);
+
         log.info("Fetching all completed tasks lists.");
-        Page<TasksList> tasksLists = tasksListService.getAllCompletedTasksLists(pageable,username);
+        Page<TasksList> tasksLists = tasksListService.getAllCompletedTasksLists(pageable,principal.getName());
         log.info("All completed tasks lists fetched");
         return ResponseEntity.ok(tasksLists);
 
