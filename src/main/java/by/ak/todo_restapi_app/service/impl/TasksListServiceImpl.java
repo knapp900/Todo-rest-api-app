@@ -1,5 +1,6 @@
 package by.ak.todo_restapi_app.service.impl;
 
+import by.ak.todo_restapi_app.dto.TasksListDTO;
 import by.ak.todo_restapi_app.entity.TasksList;
 import by.ak.todo_restapi_app.entity.User;
 import by.ak.todo_restapi_app.exceptions.customException.TaskListNotFoundException;
@@ -8,6 +9,7 @@ import by.ak.todo_restapi_app.exceptions.customException.UserNotFoundException;
 import by.ak.todo_restapi_app.repository.TasksListRepository;
 import by.ak.todo_restapi_app.repository.UserRepository;
 import by.ak.todo_restapi_app.service.TasksListService;
+import by.ak.todo_restapi_app.service.impl.mapper.TasksListMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -26,6 +28,7 @@ public class TasksListServiceImpl implements TasksListService {
     private final TasksListRepository tasksListRepository;
     private final UserRepository userRepository;
 
+    private final TasksListMapper tasksListMapper;
     @Override
     public void deleteTasksList(Long id, String username) {
 
@@ -48,7 +51,7 @@ public class TasksListServiceImpl implements TasksListService {
     }
 
     @Override
-    public TasksList createTasksList(String description, String username) {
+    public TasksListDTO createTasksList(String description, String username) {
         try {
             User user = this.userRepository.findByUsername(username)
                     .orElseGet(() -> {
@@ -63,7 +66,7 @@ public class TasksListServiceImpl implements TasksListService {
             tasksList.setDateTimeOfCreation(LocalDateTime.now());
             tasksList.setUsername(user.getUsername());
 
-            return this.tasksListRepository.save(tasksList);
+            return tasksListMapper.toDto(this.tasksListRepository.save(tasksList));
 
         } catch (Exception e) {
 
@@ -76,7 +79,7 @@ public class TasksListServiceImpl implements TasksListService {
 
     @Transactional
     @Override
-    public TasksList updateTasksList(Long id, String description, String username) {
+    public TasksListDTO updateTasksList(Long id, String description, String username) {
         try {
             TasksList tasksListForUpdating = this.tasksListRepository.findAllByUsernameAndId(username, id).orElseThrow(() -> {
                 log.error("Task list not found with id: {}.", id);
@@ -85,7 +88,7 @@ public class TasksListServiceImpl implements TasksListService {
             });
 
             tasksListForUpdating.setDescription(description);
-            return this.tasksListRepository.save(tasksListForUpdating);
+            return tasksListMapper.toDto(this.tasksListRepository.save(tasksListForUpdating));
 
         } catch (Exception e) {
             log.error("Error updating task list with id: {}.", id);
@@ -96,12 +99,12 @@ public class TasksListServiceImpl implements TasksListService {
     }
 
     @Override
-    public TasksList getTasksListByUsernameAndId(Long id, String username) {
+    public TasksListDTO getTasksListByUsernameAndId(Long id, String username) {
         try {
-            return this.tasksListRepository.findAllByUsernameAndId(username, id).orElseThrow(() -> {
+            return tasksListMapper.toDto(this.tasksListRepository.findAllByUsernameAndId(username, id).orElseThrow(() -> {
                 log.error("Error task list with id: {} not found", id);
                 return new TaskListNotFoundException(String.format("Task list with id: %d nut found.",id));
-            });
+            }));
 
         } catch (Exception e) {
             log.error("Error fetching task list by id:{}", id, e);
@@ -111,9 +114,10 @@ public class TasksListServiceImpl implements TasksListService {
     }
 
     @Override
-    public Page<TasksList> getAllTasksLists(Pageable pageable, String username) {
+    public Page<TasksListDTO> getAllTasksLists(Pageable pageable, String username) {
         try {
-            return this.tasksListRepository.findAllByUsername(username, pageable);
+            return this.tasksListRepository.findAllByUsername(username, pageable)
+                    .map(tasksListMapper::toDto);
 
         } catch (Exception e) {
             log.error("Error fetching all task lists for user: {}.", username);
@@ -123,9 +127,10 @@ public class TasksListServiceImpl implements TasksListService {
     }
 
     @Override
-    public Page<TasksList> getAllUncompletedTasksLists(Pageable pageable, String username) {
+    public Page<TasksListDTO> getAllUncompletedTasksLists(Pageable pageable, String username) {
         try {
-            return this.tasksListRepository.findAllByUsernameAndIsCompleteFalse(username, pageable);
+            return this.tasksListRepository.findAllByUsernameAndIsCompleteFalse(username, pageable)
+                    .map(tasksListMapper::toDto);
 
         } catch (Exception e) {
             log.error("Error fetching all uncompleted task lists for user: {}.", username);
@@ -135,9 +140,10 @@ public class TasksListServiceImpl implements TasksListService {
     }
 
     @Override
-    public Page<TasksList> getAllCompletedTasksLists(Pageable pageable, String username) {
+    public Page<TasksListDTO> getAllCompletedTasksLists(Pageable pageable, String username) {
         try {
-            return this.tasksListRepository.findAllByUsernameAndIsCompleteTrue(username, pageable);
+            return this.tasksListRepository.findAllByUsernameAndIsCompleteTrue(username, pageable)
+                    .map(tasksListMapper::toDto);
 
         } catch (Exception e) {
             log.error("Error fetching all completed task lists for user: {}.", username);

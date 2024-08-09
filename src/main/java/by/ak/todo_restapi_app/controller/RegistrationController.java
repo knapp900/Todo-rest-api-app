@@ -1,6 +1,6 @@
 package by.ak.todo_restapi_app.controller;
 
-import by.ak.todo_restapi_app.entity.User;
+import by.ak.todo_restapi_app.dto.UserDTO;
 import by.ak.todo_restapi_app.service.RegistrationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,7 +14,8 @@ public class RegistrationController {
     private final RegistrationService service;
 
     @PostMapping("/api/v1/signIn")
-    public void registration(@RequestBody User user){
+    public void registration(@RequestBody UserDTO user){
+
         this.service.registrationUser(user);
     }
 

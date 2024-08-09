@@ -18,9 +18,9 @@ public class Task {
     @Column(name = "task_id")
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "taskslist_id")
-    private TasksList tasksList;
+
+    @Column(name = "taskslist_id")
+    private Long tasksListId;
 
     @Column(name = "title")
     private String title;

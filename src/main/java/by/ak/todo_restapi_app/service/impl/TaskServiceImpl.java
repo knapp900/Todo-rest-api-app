@@ -1,12 +1,15 @@
 package by.ak.todo_restapi_app.service.impl;
 
+import by.ak.todo_restapi_app.dto.TaskDTO;
+import by.ak.todo_restapi_app.dto.TasksListDTO;
+import by.ak.todo_restapi_app.entity.Importance;
 import by.ak.todo_restapi_app.entity.Status;
 import by.ak.todo_restapi_app.entity.Task;
-import by.ak.todo_restapi_app.entity.TasksList;
 import by.ak.todo_restapi_app.exceptions.customException.TaskNotFoundException;
 import by.ak.todo_restapi_app.exceptions.customException.TaskServiceException;
 import by.ak.todo_restapi_app.repository.TaskRepository;
 import by.ak.todo_restapi_app.service.TaskService;
+import by.ak.todo_restapi_app.service.impl.mapper.TaskDTOMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -24,10 +27,15 @@ public class TaskServiceImpl implements TaskService {
     private final TaskRepository taskRepository;
     private final TasksListServiceImpl tasksListService;
 
+    private final TaskDTOMapper taskDTOMapper;
+    private final static String DEFAULT_TITLE = "Title is blank!";
+    private final static String DEFAULT_CONTENT = "Content is blank!";
+
+
     @Override
-    public void deleteTask(Long tasksListId, Long taskId) {
+    public void deleteTask(Long tasksListId, Long taskId, String username) {
         try {
-            this.taskRepository.findTaskByTasksListIdAndId(tasksListId,taskId).orElseThrow(() -> {
+            this.taskRepository.findTaskByTasksListIdAndId(tasksListId, taskId).orElseThrow(() -> {
                 log.error("Error task not found with id: {}", taskId);
                 return new TaskNotFoundException(String.format("Task with id: %d not found.", taskId));
             });
@@ -52,12 +60,12 @@ public class TaskServiceImpl implements TaskService {
                 log.error("Error task with id:{} not found", sourceTaskId);
                 return new TaskNotFoundException(String.format("Task with id: %d not found.", sourceTaskId));
             });
-            TasksList destTasksList = this.tasksListService.getTasksListByUsernameAndId(destTasksListId, username);
-            TasksList sourceTaskList = this.tasksListService.getTasksListByUsernameAndId(sourceTasksListId, username);
+            TasksListDTO destTasksList = this.tasksListService.getTasksListByUsernameAndId(destTasksListId, username);
+            TasksListDTO sourceTaskList = this.tasksListService.getTasksListByUsernameAndId(sourceTasksListId, username);
 
-            if (Objects.equals(taskForMoving.getTasksList(),sourceTaskList)){
+            if (Objects.equals(taskForMoving.getTasksListId(), sourceTaskList.id())) {
 
-                taskForMoving.setTasksList(destTasksList);
+                taskForMoving.setTasksListId(destTasksList.id());
             } else {
                 throw new TaskServiceException(String.format(
                         "Moving task with id: %d to list with id: %d failed.", sourceTaskId, destTasksListId));
@@ -72,23 +80,32 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public Task createTask(Long tasksListId, Task task,String username) {
+    @Transactional
+    public TaskDTO createTask(Long tasksListId, TaskDTO taskDTO, String username) {
         try {
-            task.setTasksList(this.tasksListService.getTasksListByUsernameAndId(tasksListId, username));
-            return this.taskRepository.save(task);
+            TasksListDTO tasksList = this.tasksListService.getTasksListByUsernameAndId(tasksListId, username);
+            Task task = taskDTOMapper.toEntity(taskDTO);
+            task.setTitle(Objects.nonNull(task.getTitle()) ? task.getTitle() : DEFAULT_TITLE);
+            task.setContent(Objects.nonNull(task.getContent()) ? task.getContent() : DEFAULT_CONTENT);
+            task.setTasksListId(tasksList.id());
+            task.setStatus(Objects.nonNull(task.getStatus()) ? task.getStatus() : Status.NOT_STARTED);
+            task.setImportance(Objects.nonNull(task.getImportance()) ? task.getImportance() : Importance.LOW);
+            task.setCreatedDateTime(LocalDateTime.now());
+            task.setLastModifiedDateTime(LocalDateTime.now());
+            return taskDTOMapper.toDto(this.taskRepository.save(task));
         } catch (Exception e) {
-            log.error("Error creating task: {}.", task, e);
+            log.error("Error creating task: {}.", taskDTO, e);
             throw new TaskServiceException("Creating task failed.");
         }
     }
 
     @Override
-    public Task getTask(Long tasksListId, Long taskId) {
+    public TaskDTO getTask(Long tasksListId, Long taskId) {
         try {
-            return this.taskRepository.findTaskByTasksListIdAndId(tasksListId, taskId).orElseThrow(() -> {
+            return taskDTOMapper.toDto(this.taskRepository.findTaskByTasksListIdAndId(tasksListId, taskId).orElseThrow(() -> {
                 log.error("Error task not found with id: {}", taskId);
                 return new TaskNotFoundException(String.format("Task with id: %d not found.", taskId));
-            });
+            }));
         } catch (Exception e) {
             log.error("Error fetching task with id: {}.", taskId, e);
             throw new TaskServiceException(String.format("Fetching task with id: %d failed.", taskId));
@@ -96,21 +113,22 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public Task updateTask(Long tasksListId, Long taskId, Task task) {
+    @Transactional
+    public TaskDTO updateTask(Long tasksListId, Long taskId, TaskDTO task) {
         try {
             Task taskForUpdate = this.taskRepository.findTaskByTasksListIdAndId(tasksListId, taskId).orElseThrow(() -> {
                 log.error("Error task not found with id: {}", taskId);
                 return new TaskNotFoundException(String.format("Task with id: %d not found.", taskId));
             });
 
-            taskForUpdate.setTitle(Objects.nonNull(task.getTitle())?task.getTitle():taskForUpdate.getTitle());
-            taskForUpdate.setContent(Objects.nonNull(task.getContent())?task.getContent():taskForUpdate.getContent());
-            taskForUpdate.setImportance(Objects.nonNull(task.getImportance())?task.getImportance():taskForUpdate.getImportance());
-            taskForUpdate.setStatus(Objects.nonNull(task.getStatus())?task.getStatus():taskForUpdate.getStatus());
-            taskForUpdate.setCreatedDateTime(Objects.nonNull(task.getCreatedDateTime())?task.getCreatedDateTime():taskForUpdate.getCreatedDateTime());
+            taskForUpdate.setTitle(Objects.nonNull(task.title()) ? task.title() : taskForUpdate.getTitle());
+            taskForUpdate.setContent(Objects.nonNull(task.content()) ? task.content() : taskForUpdate.getContent());
+            taskForUpdate.setImportance(Objects.nonNull(task.importance()) ? task.importance() : taskForUpdate.getImportance());
+            taskForUpdate.setStatus(Objects.nonNull(task.status()) ? task.status() : taskForUpdate.getStatus());
+            taskForUpdate.setCreatedDateTime(Objects.nonNull(task.createdDateTime()) ? task.createdDateTime() : taskForUpdate.getCreatedDateTime());
             taskForUpdate.setLastModifiedDateTime(LocalDateTime.now());
 
-         return this.taskRepository.save(taskForUpdate);
+            return taskDTOMapper.toDto(this.taskRepository.save(taskForUpdate));
 
         } catch (Exception e) {
             log.error("Error updating task with id: {}.", taskId, e);
@@ -119,10 +137,11 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public Page<Task> getAllTasks(Long tasksListId, Pageable pageable) {
+    public Page<TaskDTO> getAllTasks(Long tasksListId, Pageable pageable) {
         try {
-            return this.taskRepository.findAllByTasksListId(tasksListId,pageable);
-        } catch (Exception e){
+            return this.taskRepository.findAllByTasksListId(tasksListId, pageable)
+                    .map(taskDTOMapper::toDto);
+        } catch (Exception e) {
             log.error("Error fetching all tasks.", e);
             throw new TaskServiceException("Fetching all tasks failed.");
         }
@@ -130,13 +149,14 @@ public class TaskServiceImpl implements TaskService {
 
 
     @Override
-    public Page<Task> getAllByStatus(Status status, Long tasksListId, Pageable pageable) {
+    public Page<TaskDTO> getAllByStatus(Status status, Long tasksListId, Pageable pageable) {
 
         try {
-            return this.taskRepository.findByStatus(status,tasksListId,pageable);
-        } catch (Exception e){
-            log.error("Error fetching all tasks with status: {}.",status, e);
-            throw new TaskServiceException(String.format("Fetching all tasks with status: %s failed.",status));
+            return this.taskRepository.findByStatus(status, tasksListId, pageable)
+                    .map(taskDTOMapper::toDto);
+        } catch (Exception e) {
+            log.error("Error fetching all tasks with status: {}.", status, e);
+            throw new TaskServiceException(String.format("Fetching all tasks with status: %s failed.", status));
         }
     }
 

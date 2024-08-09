@@ -1,11 +1,15 @@
 package by.ak.todo_restapi_app.controller;
 
-import by.ak.todo_restapi_app.entity.TasksList;
+import by.ak.todo_restapi_app.dto.TasksListDTO;
 import by.ak.todo_restapi_app.service.TasksListService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PagedResourcesAssembler;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.PagedModel;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,72 +36,88 @@ public class TasksListController {
 
 
     @PostMapping
-    public ResponseEntity<TasksList> createTasksList(
+    public ResponseEntity<TasksListDTO> createTasksList(
             Principal principal,
             @RequestBody String description) {
         String username = principal.getName();
         log.info("Creating task list with user: {}.", username);
-        TasksList tasksList = tasksListService.createTasksList(description,username);
+        TasksListDTO tasksList = tasksListService.createTasksList(description, username);
         log.info("Created task list with user: {}.", username);
         return ResponseEntity.ok(tasksList);
     }
 
+
     @PutMapping("/{id}")
-    public ResponseEntity<TasksList> updateTasksList(
+    public ResponseEntity<TasksListDTO> updateTasksList(
             Principal principal,
             @PathVariable Long id,
             @RequestBody String description) {
 
         log.info("Updating task list with id: {}.", id);
-        this.tasksListService.updateTasksList(id, description,principal.getName());
+        TasksListDTO tasksListDTO = this.tasksListService.updateTasksList(id, description, principal.getName());
         log.info("Task list with id: {} updated.", id);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(tasksListDTO);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<TasksList> getTaskListById(
+    public ResponseEntity<TasksListDTO> getTaskListById(
             Principal principal,
-            @PathVariable Long id){
+            @PathVariable Long id) {
 
-        log.info("Fetching task list by id: {}.",id);
-        TasksList tasksLists = tasksListService.getTasksListByUsernameAndId(id,principal.getName());
-        log.info("Task list fetched by id: {}",id);
+        log.info("Fetching task list by id: {}.", id);
+        TasksListDTO tasksLists = tasksListService.getTasksListByUsernameAndId(id, principal.getName());
+        log.info("Task list fetched by id: {}", id);
 
         return ResponseEntity.ok(tasksLists);
     }
 
     @GetMapping
-    public ResponseEntity<Page<TasksList>> getAllTasksLists(
+    public HttpEntity<PagedModel<EntityModel<TasksListDTO>>> getAllTasksLists(
             Principal principal,
-            Pageable pageable) {
-
+            Pageable pageable,
+            PagedResourcesAssembler<TasksListDTO> assembler
+    ) {
         log.info("Fetching all tasks lists.");
-        Page<TasksList> tasksLists = tasksListService.getAllTasksLists(pageable, principal.getName());
+        Page<TasksListDTO> tasksLists = tasksListService.getAllTasksLists(pageable, principal.getName());
+        if (tasksLists == null || tasksLists.isEmpty()) {
+            log.info("No tasks lists found.");
+            return ResponseEntity.noContent().build();
+        }
         log.info("All tasks lists fetched");
-        return ResponseEntity.ok(tasksLists);
+        return ResponseEntity.ok(assembler.toModel(tasksLists));
     }
 
     @GetMapping("/uncompleted")
-    public ResponseEntity<Page<TasksList>> getAllUncompletedTasksLists(
+    public HttpEntity<PagedModel<EntityModel<TasksListDTO>>> getAllUncompletedTasksLists(
             Principal principal,
-            Pageable pageable) {
+            Pageable pageable,
+            PagedResourcesAssembler<TasksListDTO> assembler) {
 
         log.info("Fetching all uncompleted tasks lists.");
-        Page<TasksList> tasksLists = tasksListService.getAllUncompletedTasksLists(pageable, principal.getName());
+        Page<TasksListDTO> tasksLists = tasksListService.getAllUncompletedTasksLists(pageable, principal.getName());
+        if (tasksLists == null || tasksLists.isEmpty()) {
+            log.info("No tasks lists found.");
+            return ResponseEntity.noContent().build();
+        }
         log.info("All uncompleted tasks lists fetched");
-        return ResponseEntity.ok(tasksLists);
+        return ResponseEntity.ok(assembler.toModel(tasksLists));
 
     }
 
     @GetMapping("/completed")
-    public ResponseEntity<Page<TasksList>> getAllCompletedTasksLists(
+    public HttpEntity<PagedModel<EntityModel<TasksListDTO>>> getAllCompletedTasksLists(
             Principal principal,
-            Pageable pageable) {
+            Pageable pageable,
+            PagedResourcesAssembler<TasksListDTO> assembler) {
 
         log.info("Fetching all completed tasks lists.");
-        Page<TasksList> tasksLists = tasksListService.getAllCompletedTasksLists(pageable,principal.getName());
+        Page<TasksListDTO> tasksLists = tasksListService.getAllCompletedTasksLists(pageable, principal.getName());
+        if (tasksLists == null || tasksLists.isEmpty()) {
+            log.info("No tasks lists found.");
+            return ResponseEntity.noContent().build();
+        }
         log.info("All completed tasks lists fetched");
-        return ResponseEntity.ok(tasksLists);
+        return ResponseEntity.ok(assembler.toModel(tasksLists));
 
     }
 }

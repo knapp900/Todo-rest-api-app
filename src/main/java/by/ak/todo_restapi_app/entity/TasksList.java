@@ -22,7 +22,8 @@ public class TasksList {
     @Column(name = "description")
     private String description;
 
-    @OneToMany(mappedBy = "tasksList",cascade = CascadeType.ALL,fetch = FetchType.EAGER)
+    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @JoinColumn(name = "taskslist_id", insertable = false, updatable = false)
     private List<Task> tasks;
 
     @Column(name = "dateTimeOfCreation")
