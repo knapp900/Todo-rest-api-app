@@ -1,6 +1,7 @@
 package by.ak.todo_restapi_app.controller;
 
 import by.ak.todo_restapi_app.dto.TasksListDTO;
+import by.ak.todo_restapi_app.dto.TasksListForUpdatingDTO;
 import by.ak.todo_restapi_app.service.TasksListService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -51,10 +52,10 @@ public class TasksListController {
     public ResponseEntity<TasksListDTO> updateTasksList(
             Principal principal,
             @PathVariable Long id,
-            @RequestBody String description) {
+            @RequestBody TasksListForUpdatingDTO updates) {
 
         log.info("Updating task list with id: {}.", id);
-        TasksListDTO tasksListDTO = this.tasksListService.updateTasksList(id, description, principal.getName());
+        TasksListDTO tasksListDTO = this.tasksListService.updateTasksList(id, updates, principal.getName());
         log.info("Task list with id: {} updated.", id);
         return ResponseEntity.ok(tasksListDTO);
     }

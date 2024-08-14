@@ -30,7 +30,7 @@ public class RegistrationService {
                 this.repository.save(userMapper.toEntity(user));
             }
         } catch (UserRegistrationException e) {
-            log.error("User with username: %s already exist.", user.username(), e);
+            log.error("User with username: {} already exist.", user.username(), e);
             throw new UserServiceException(e.getMessage());
         } catch (Exception e) {
             log.error("Registration user with username: {} failed.", user.username(), e);

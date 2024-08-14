@@ -54,34 +54,4 @@ public class SecurityConfig {
         return new NimbusJwtEncoder(jwks);
     }
 
-
-    /**
-     *     @Bean
-     *     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-     *         http
-     *             .csrf(AbstractHttpConfigurer::disable)
-     *             .authorizeHttpRequests(auth -> auth
-     *                 .anyRequest().authenticated()
-     *             )
-     *             .oauth2ResourceServer(oauth2 -> oauth2
-     *                 .jwt(jwt -> jwt
-     *                     .jwtAuthenticationConverter(jwtAuthenticationConverter())
-     *                 )
-     *             )
-     *             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-     *             .httpBasic(AbstractHttpConfigurer::withDefaults);
-     *
-     *         return http.build();
-     *     }
-     *
-     *     @Bean
-     *     public JwtAuthenticationConverter jwtAuthenticationConverter() {
-     *         JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
-     *
-     *         jwtAuthenticationConverter.setPrincipalClaimName("sub"); // Здесь укажите имя claim, содержащего username
-     *
-     *         return jwtAuthenticationConverter;
-     *     }
-     * }
-     */
 }

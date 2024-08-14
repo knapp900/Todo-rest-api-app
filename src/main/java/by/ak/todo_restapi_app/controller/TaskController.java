@@ -31,7 +31,6 @@ public class TaskController {
         this.taskService.deleteTask(tasksListId, taskId, principal.getName());
         log.info("Deleting task with id: {}.", taskId);
         return ResponseEntity.noContent().build();
-        //TODO (High) -Метод удаляет все подряд
     }
 
     @PatchMapping("/move/{sourceTaskId}/to/{destTasksListId}")

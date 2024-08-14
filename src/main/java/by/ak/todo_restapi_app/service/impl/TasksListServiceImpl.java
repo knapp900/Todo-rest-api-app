@@ -1,6 +1,7 @@
 package by.ak.todo_restapi_app.service.impl;
 
 import by.ak.todo_restapi_app.dto.TasksListDTO;
+import by.ak.todo_restapi_app.dto.TasksListForUpdatingDTO;
 import by.ak.todo_restapi_app.entity.TasksList;
 import by.ak.todo_restapi_app.entity.User;
 import by.ak.todo_restapi_app.exceptions.customException.TaskListNotFoundException;
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.Objects;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -79,7 +81,7 @@ public class TasksListServiceImpl implements TasksListService {
 
     @Transactional
     @Override
-    public TasksListDTO updateTasksList(Long id, String description, String username) {
+    public TasksListDTO updateTasksList(Long id, TasksListForUpdatingDTO updates, String username) {
         try {
             TasksList tasksListForUpdating = this.tasksListRepository.findAllByUsernameAndId(username, id).orElseThrow(() -> {
                 log.error("Task list not found with id: {}.", id);
@@ -87,7 +89,11 @@ public class TasksListServiceImpl implements TasksListService {
                         String.format("Task list with id: %d not found.", id));
             });
 
-            tasksListForUpdating.setDescription(description);
+            tasksListForUpdating.setDescription(Objects.nonNull(updates.description())?updates.description():tasksListForUpdating.getDescription());
+            tasksListForUpdating.setTasks(Objects.nonNull(updates.tasks())?updates.tasks():tasksListForUpdating.getTasks());
+            tasksListForUpdating.setDateTimeOfCreation(Objects.nonNull(updates.dateTimeOfCreation())?updates.dateTimeOfCreation():tasksListForUpdating.getDateTimeOfCreation());
+            tasksListForUpdating.setComplete(updates.isComplete());
+
             return tasksListMapper.toDto(this.tasksListRepository.save(tasksListForUpdating));
 
         } catch (Exception e) {
